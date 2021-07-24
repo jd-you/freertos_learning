@@ -1,3 +1,5 @@
+#ifndef LIST_H
+#define LIST_H
 #include "portmacro.h"
 
 struct xLIST_ITEM
@@ -47,8 +49,8 @@ typedef struct xLIST List_t;
     (((pxList)->xListEnd).pxNext->xItemValue)
 
 /* 获取链表的入口节点 */
-#define listGET_HEAD_ENTRY(pxList) \ 
-        (((pxList)->xListEnd).pxNext)
+#define listGET_HEAD_ENTRY(pxList) \
+    (((pxList)->xListEnd).pxNext)
 
 /* 获取节点的下一个节点 */
 #define listGET_NEXT(pxListItem) \
@@ -79,12 +81,13 @@ typedef struct xLIST List_t;
     }
 
 // 链表节点初始化
-extern void vListInitialiseItem(ListItem_t * const pxItem);
+extern void vListInitialiseItem(ListItem_t *const pxItem);
 // 链表初始化
 extern void vListInitialise(List_t *const pxList);
 // 将节点插入到链表的尾部
-extern void vListInsertEnd(List_t * const pxList, ListItem_t * const pxNewListItem);
+extern void vListInsertEnd(List_t *const pxList, ListItem_t *const pxNewListItem);
 // 将节点按照升序排列插入到链表
-extern void vListInsert(List_t * const pxList, ListItem_t *const pxNewListItem);
+extern void vListInsert(List_t *const pxList, ListItem_t *const pxNewListItem);
 // 将节点从链表删除
-extern UBaseType_t uxListRemove(ListItem_t * const pxItemToRemove);
+extern UBaseType_t uxListRemove(ListItem_t *const pxItemToRemove);
+#endif

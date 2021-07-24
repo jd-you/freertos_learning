@@ -23,4 +23,17 @@ typedef uint16_t TickType_t;
 typedef uint32_t TickType_t;
 #define portMAX_DELAY ((TickType_t)0xffffffff)
 #endif
+
+#define portNVIC_INT_CTRL_REG (*((volatile uint32_t *)0xe000ed04))
+#define portNVIC_PENDSVSET_BIT (1UL << 28UL)
+#define portSY_FULL_READ_WRITE (15)
+
+#define portYIELD()                                     \
+    {                                                   \
+        portNVIC_INT_CTRL_REG = portNVIC_PENDSVSET_BIT; \
+        __dsb(portSY_FULL_READ_WRITE);                  \
+        __isb(portSY_FULL_READ_WRITE);                  \
+    }
+
+    
 #endif
