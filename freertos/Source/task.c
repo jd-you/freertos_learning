@@ -5,7 +5,16 @@ TCB_t *pxCurrentTCB;
 
 TCB_t Task1TCB; // TODO
 TCB_t Task2TCB; // TODO
+TCB_t TaskIdleTCB;
 List_t pxReadyTasksLists[configMAX_PRIORITIES]; // TODO
+
+#define portNVIC_SYSTICK_CTRL_REG (*((volatile uint32_t *) 0xe000e010 ))
+#define portNVIC_SYSTICK_LOAD_REG (*((volatile uint32_t *) 0xe000e014 ))
+#define configCPU_CLOCK_HZ (( unsigned long ) 25000000)
+#define configTICK_RATE_HZ (( TickType_t ) 1000)
+#define portNVIC_SYSTICK_INT_BIT ( 1UL << 1UL )
+#define portNVIC_SYSTICK_ENABLE_BIT ( 1UL << 0UL )
+#define portNVIC_SYSTICK_CLK_BIT ( 0UL )
 
 static void prvInitialiseNewTask(TaskFunction_t pxTaskCode,
                                  const char *const pcName,
@@ -90,6 +99,11 @@ void vTaskStartScheduler(void)
 {
     pxCurrentTCB = &Task1TCB;
 
+    portNVIC_SYSTICK_LOAD_REG = (configCPU_CLOCK_HZ / configTICK_RATE_HZ) - 1;
+    portNVIC_SYSTICK_CTRL_REG = (portNVIC_SYSTICK_INT_BIT 
+                                | portNVIC_SYSTICK_ENABLE_BIT
+                                | portNVIC_SYSTICK_CLK_BIT);
+
     if (xPortStartScheduler() != pdFALSE) {
 
     }
@@ -97,10 +111,35 @@ void vTaskStartScheduler(void)
 
 void vTaskSwitchContext(void)
 {
-    if (pxCurrentTCB == &Task1TCB)
-    {
-        pxCurrentTCB = &Task2TCB;
-    } else {
-        pxCurrentTCB = &Task1TCB;
+    if (pxCurrentTCB == &TaskIdleTCB) {
+        if (Task1TCB.xTicksToDelay == 0) {
+            pxCurrentTCB = &Task1TCB;
+        } else if (Task2TCB.xTicksToDelay == 0) {
+            pxCurrentTCB = &Task2TCB;
+        }
+    } else if (pxCurrentTCB == &Task1TCB) {
+        if (Task2TCB.xTicksToDelay == 0) {
+            pxCurrentTCB = &Task2TCB;
+        } else if (Task1TCB.xTicksToDelay != 0) {
+            pxCurrentTCB = &TaskIdleTCB;
+        }
+    } else if (pxCurrentTCB == &Task2TCB) {
+        if (Task1TCB.xTicksToDelay == 0) {
+            pxCurrentTCB = &Task1TCB;
+        } else if (Task2TCB.xTicksToDelay != 0) {
+            pxCurrentTCB = &TaskIdleTCB;
+        }
     }
+    return;
+}
+
+void vTaskDelay(const TickType_t xTicksToDelay)
+{
+    TCB_t *pxTCB = NULL;
+
+    pxTCB = pxCurrentTCB;
+
+    pxTCB->xTicksToDelay = xTicksToDelay;
+
+    taskYIELD();
 }

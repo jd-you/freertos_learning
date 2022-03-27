@@ -1,5 +1,6 @@
 #include "port.h"
 #include "FreeRTOSConfig.h"
+#include "task.h"
 
 #define portINITIAL_XPSR (0x01000000)
 #define portSTART_ADDRESS_MASK ((StackType_t)0xfffffffeUL)
@@ -30,15 +31,6 @@ StackType_t *pxPortInitialiseStack(StackType_t *pxTopOfStack,
     pxTopOfStack -= 8;
 
     return pxTopOfStack;
-}
-
-BaseType_t xPortStartScheduler(void)
-{
-    portNVIC_SYSPRI2_REG |= portNVIC_PENSV_PRI;
-    portNVIC_SYSPRI2_REG |= portNVIC_SYSPRI2_REG;
-
-    prvStartFirstTask();
-    return 0;
 }
 
 __asm void prvStartFirstTask(void)
@@ -114,4 +106,39 @@ __asm void xPortPendSVHandler(void)
     isb
     bx r14
     nop
+}
+
+BaseType_t xPortStartScheduler(void)
+{
+    portNVIC_SYSPRI2_REG |= portNVIC_PENSV_PRI;
+    portNVIC_SYSPRI2_REG |= portNVIC_SYSPRI2_REG;
+
+    prvStartFirstTask();
+    return 0;
+}
+
+TickType_t xTickCount;
+void xTaskIncrementTick( void )
+{
+    TCB_t *pxTCB = NULL;
+    BaseType_t i = 0;
+    /* 更新系统时基计数器xTickCount，xTickCount 是一个在port.c 中定义的全局变量 */
+    const TickType_t xConstTickCount = xTickCount + 1;
+    xTickCount = xConstTickCount;
+
+    /* 扫描就绪列表中所有任务的xTicksToDelay，如果不为0，则减1 */
+    for (i=0; i<configMAX_PRIORITIES; i++){
+        pxTCB = ( TCB_t * ) listGET_OWNER_OF_HEAD_ENTRY( ( &pxReadyTasksLists[i] ) );
+        if (pxTCB->xTicksToDelay > 0) {
+            pxTCB->xTicksToDelay --;
+        }
+    }
+
+    /* 任务切换 */
+    portYIELD();
+}
+
+void xPortSysTickHandler(void)
+{
+    xTaskIncrementTick();
 }

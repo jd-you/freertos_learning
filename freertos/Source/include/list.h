@@ -80,6 +80,7 @@ typedef struct xLIST List_t;
         (pxTCB) = (pxConstLIst)->pxIndex->pvOwner;                             \
     }
 
+#define listGET_OWNER_OF_HEAD_ENTRY( pxList )            ( ( &( ( pxList )->xListEnd ) )->pxNext->pvOwner )
 // 链表节点初始化
 extern void vListInitialiseItem(ListItem_t *const pxItem);
 // 链表初始化

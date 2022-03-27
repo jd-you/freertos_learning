@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "portmacro.h": "c",
+        "projdefs.h": "c"
+    }
+}
